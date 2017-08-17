@@ -24,7 +24,7 @@ print_fingerprints() {
     local BASE_DIR=${1-'/etc/ssh'}
     for item in dsa rsa ecdsa ed25519; do
         echo ">>> Fingerprints for ${item} host key"
-        ssh-keygen -E md5 -lf ${BASE_DIR}/ssh_host_${item}_key 
+        ssh-keygen -E md5 -lf ${BASE_DIR}/ssh_host_${item}_key
         ssh-keygen -E sha256 -lf ${BASE_DIR}/ssh_host_${item}_key
         ssh-keygen -E sha512 -lf ${BASE_DIR}/ssh_host_${item}_key
     done
@@ -81,8 +81,15 @@ if [ -n "${SSH_USERS}" ]; then
     done
 else
     # Warn if no authorized_keys
-    if [ ! -e ~/.ssh/authorized_keys ] && [ ! $(ls -A /etc/authorized_keys) ]; then
-      echo "WARNING: No SSH authorized_keys found!"
+    if [ ! -e ~/.ssh/authorized_keys ] && [ ! $(ls -A /etc/authorized_keys) ] && [ "${USE_ENV_SSH_KEY}" ]; then
+      echo "using ENV SSH keys"
+      mkdir -p ~/.ssh && chown root:root ~/.ssh && chmod 700 ~/.ssh/
+      echo "${USE_ENV_SSH_KEY}" > ~/.ssh/authorized_keys && chown root:root ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys
+    fi
+    if [ ! -e ~/.ssh/authorized_keys ] && [ ! $(ls -A /etc/authorized_keys) ] && [ "${USE_AWS_SSH_KEY}" ]; then
+      echo "using AWS ENV SSH keys"
+      mkdir -p ~/.ssh && chown root:root ~/.ssh && chmod 700 ~/.ssh/
+      curl http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key > /tmp/test > ~/.ssh/authorized_keys && chown root:root ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys
     fi
 fi
 
